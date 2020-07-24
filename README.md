@@ -18,4 +18,4 @@ conda env create -f environment.yml
 
 
 ### Train and cross-validation
-Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be used to train the model
+Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be used to train the model. In [`trainval.ipynb`](trainval.ipynb), you can get a brief introduction of the setup of the dataset.
