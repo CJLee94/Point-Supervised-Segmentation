@@ -38,4 +38,4 @@ Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be 
 
 #### Module location
 
-The models are defined in `src/models`. The dataset is defined in `src/dataset`
+The models are defined in [`src/models`](src/models). The dataset is defined in [`src/datasets/__init__.py`](src/datasets/__init__.py).
