@@ -1,0 +1,10 @@
+{
+    "batch_size": 1,
+    "lr": 1e-05,
+    "max_epoch": 20,
+    "model": {
+        "base": "fcn8_vgg16",
+        "name": "lcfcn"
+    },
+    "optimizer": "adam"
+}
