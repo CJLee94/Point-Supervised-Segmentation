@@ -13,7 +13,11 @@ To pre-setup the environment, we recommand to use
 ```
 conda env create -f environment.yml
 ```
-
+and
+```
+pip install -r requirements.txt
+```
+This command installs pydicom and the [Haven library](https://github.com/ElementAI/haven) which helps in managing the experiments.
 ### Download Dataset
 
 
