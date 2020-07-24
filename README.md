@@ -18,4 +18,20 @@ conda env create -f environment.yml
 
 
 ### Train and cross-validation
-Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be used to train the model. In [`trainval.ipynb`](trainval.ipynb), you can get a brief introduction of the setup of the dataset.
+#### Example
+
+Train and validate the lcfcn model with TNBC dataset
+```
+python trainval.py -d TNBC -e exp_config_lcfcn.json -r 1
+```
+
+Train and validate the pseudoedgenet model with MoNuSeg dataset
+```
+python trainval.py -d MoNuSegTrainingData -e exp_config_penet.json -r 1
+```
+
+Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be used to train and validate the model. In [`trainval.ipynb`](trainval.ipynb), you can get a brief introduction of the setup of the dataset.
+
+#### Module location
+
+The models are defined in `src/models`. The dataset is defined in `src/dataset`
