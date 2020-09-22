@@ -24,7 +24,8 @@ from torch.utils.data.sampler import RandomSampler
 from torch.backends import cudnn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from albumentations import Flip, ShiftScaleRotate, RandomRotate90, RandomCrop
+# from albumentations import Flip, ShiftScaleRotate, RandomRotate90, RandomCrop
+import albumentations as A
 from src.datasets import HEDataset
 import glob,os
 
@@ -51,12 +52,18 @@ def trainval(exp_dict, savedir_base, datadir, folddir, reset=False, num_workers=
     # ==================
     # train set
     
-    data_transform = [
-        Flip(p=0.5),
-    #     ShiftScaleRotate(p=0.5),
-        RandomRotate90(p=0.5),
-        RandomCrop(256,256)
-    ]
+    data_transform = A.Compose([A.RandomCrop(64,64), 
+                                A.Flip(p=0.5)], 
+                               keypoint_params = A.KeypointParams(format='xy'), 
+                               additional_targets={'bkg':'mask', 
+                                                   'obj':'mask'})
+    
+#     data_transform = [
+#         Flip(p=0.5),
+#     #     ShiftScaleRotate(p=0.5),
+#         RandomRotate90(p=0.5),
+#         RandomCrop(256,256)
+#     ]
     train_set = HEDataset(datapath = os.path.join(datadir,'dataset.hdf5'), 
                               transform=data_transform, 
                               index = tr_idx)
