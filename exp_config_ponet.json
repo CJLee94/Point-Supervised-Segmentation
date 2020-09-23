@@ -1,0 +1,9 @@
+{
+    "batch_size": 1,
+    "lr": 0.001,
+    "max_epoch": 20,
+    "model": {
+        "name": "ponet"
+    },
+    "optimizer": "adam"
+}
