@@ -13,9 +13,9 @@ def compute_weighted_crossentropy(logits, points, bkgs):
     prob_log = torch.log_softmax(logits, 1)
     f_loss = F.nll_loss(prob_log, points, 
                         ignore_index=0)
-    b_loss = F.nll_loss(prob_log, 1-bkgs, 
-                        ignore_index=1)
-    return f_loss+0.1*b_loss
+#     b_loss = F.nll_loss(prob_log, 1-bkgs, 
+#                         ignore_index=1)
+    return f_loss
 
 def compute_obj_loss(prob, obj, eps = 1e-6):
     prob = F.softmax(prob, 1)
