@@ -12,10 +12,11 @@ class HEDataset(Dataset):
     def __init__(self, data_dir, transform=None, option="Train", n_classes = 1):
 
         self.transform = transform
-        self.datafp = datapath
+        self.data_dir = data_dir
         self.n_classes = n_classes
-        self.names = glob.glob(os.path.join(data_dir,'**',option, "*_norm.tif"))
-        self.names = [path[:-10] for path in self.names]
+        self.option = option
+        self.names = glob.glob(os.path.join(self.data_dir,'**',option, "*_norm.tif"))
+        self.names = [path[:-9] for path in self.names]
 #         #names = list(map(str,list(np.sort(list(map(int,self.data.keys()))))))
 #         with h5py.File(self.datafp,'r') as h5f:
 #             names = np.sort(list(h5f.keys())).tolist()
@@ -35,7 +36,8 @@ class HEDataset(Dataset):
         real_ind = ind%(len(self.names))
         image = sio.imread(self.names[real_ind]+"_norm.tif")
         obj = sio.imread(self.names[real_ind]+"_obj.tif")
-        bkg = sio.imread(self.names[real_ind]+"_bkg.tif")
+        bkg = sio.imread(self.names[real_ind]+"_bkgw.tif")
+        mask = sio.imread(self.names[real_ind]+"_mask.tif")
         points = hu.load_json(self.names[real_ind]+"_points.json")
 
         if self.transform:
@@ -56,32 +58,34 @@ class HEDataset(Dataset):
 #             X = color_aug(image = X)['image'].transpose(2,0,1)/255
 
             image = transformed["image"]
-            points = transformed["keypoints"]
+            points = np.array(transformed["keypoints"]).astype(int)
             mask = transformed["mask"]
             bkg = transformed["mask0"]
             obj = transformed["mask1"]
-            counts = torch.LongTensor(len(points))
+            counts = len(points)
             
             point_label = np.zeros_like(mask)
-            point_label[points[:,1], points[:,0]] = 1
-            return {'images':torch.FloatTensor(image.transpose(1,2,0)),
+            if counts>0:
+                point_label[points[:,1], points[:,0]] = 1
+            return {'images':torch.FloatTensor(image.transpose(2,0,1))/255.0,
                     'points':torch.FloatTensor(point_label),
                     'bkg': torch.FloatTensor(bkg),
                     'obj': torch.FloatTensor(obj),
+                    'gt':torch.FloatTensor(mask),
                     'counts': counts,
                     'meta':{'index':ind}}
         else:
-            counts = torch.LongTensor(np.array([int(point_label.sum())]))
-            return {'images':torch.FloatTensor(X.transpose(2,0,1)),
+            counts = len(points)
+            return {'images':torch.FloatTensor(image.transpose(2,0,1))/255.0,
 #                     'points':torch.FloatTensor(point_label.squeeze()),
 #                     'bkg': torch.FloatTensor(bkg.squeeze()),
                     'counts': counts,
                     'meta':{'index':ind},
-                    'gt': mask}
+                    'gt': torch.FloatTensor(mask)}
     
     def __len__(self):
-        if not self.transform is None:
-            return 100*len(self.names)
+        if self.option is "Train":
+            return 4000*len(self.names)
         else:
             return len(self.names)
 7
