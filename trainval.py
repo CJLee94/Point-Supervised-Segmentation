@@ -1,5 +1,5 @@
 from haven import haven_chk as hc
-from haven import haven_results as hr
+# from haven import haven_results as hr
 from haven import haven_utils as hu
 import torch
 import torchvision
@@ -34,29 +34,39 @@ cudnn.benchmark = True
 def loadsplittedfolds(fold_folder_path):
     return np.loadtxt(os.path.join(fold_folder_path,'tr_fold.txt')).astype(int).tolist(),np.loadtxt(os.path.join(fold_folder_path,'val_fold.txt')).astype(int).tolist(),np.loadtxt(os.path.join(fold_folder_path,'test_fold.txt')).astype(int).tolist()
 
-def trainval(exp_dict, savedir_base, datadir, folddir, reset=False, num_workers=0):
+def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # bookkeepting stuff
     # ==================
     
-    tr_idx, val_idx, ts_idx = loadsplittedfolds(folddir)
+#     tr_idx, val_idx, ts_idx = loadsplittedfolds(folddir)
     
     savedir = os.path.join(savedir_base, exp_dict["model"]["name"])
+    os.makedirs(savedir, exist_ok=True)
     
     if reset:
         hc.delete_and_backup_experiment(savedir)
 
-    os.makedirs(savedir, exist_ok=True)
     print("Experiment saved in %s" % savedir)
 
     # Dataset
     # ==================
     # train set
     
+#     data_transform = A.Compose([A.RandomCrop(64,64), 
+#                                 A.Flip(p=0.5)], 
+#                                keypoint_params = A.KeypointParams(format='xy'), 
+#                                additional_targets={'bkg':'mask', 
+#                                                    'obj':'mask'})
     data_transform = A.Compose([A.RandomCrop(64,64), 
-                                A.Flip(p=0.5)], 
-                               keypoint_params = A.KeypointParams(format='xy'), 
-                               additional_targets={'bkg':'mask', 
-                                                   'obj':'mask'})
+                           A.Flip(), 
+                           A.IAAAffine(), 
+                           A.Rotate(), 
+                           A.HueSaturationValue(hue_shift_limit = 10, sat_shift_limit=15, val_shift_limit=10,p=0.3), 
+                           A.GaussianBlur(3, p=0.3), 
+                           A.GaussNoise(30, p=0.3)], 
+                          keypoint_params = A.KeypointParams(format='xy'), 
+                          additional_targets = {'mask0':'mask', 
+                                                'mask1':'mask'})
     
 #     data_transform = [
 #         Flip(p=0.5),
@@ -64,13 +74,19 @@ def trainval(exp_dict, savedir_base, datadir, folddir, reset=False, num_workers=
 #         RandomRotate90(p=0.5),
 #         RandomCrop(256,256)
 #     ]
-    train_set = HEDataset(datapath = os.path.join(datadir,'dataset.hdf5'), 
-                              transform=data_transform, 
-                              index = tr_idx)
+    train_set = HEDataset(data_dir = datadir, 
+                          transform=data_transform, 
+                          option = "Train")
 
+    
+    test_transform = A.Compose([A.Resize(1024,1024)], 
+                              keypoint_params = A.KeypointParams(format='xy'), 
+                              additional_targets = {'mask0':'mask', 
+                                                    'mask1':'mask'})
     # val set
-    val_set = HEDataset(datapath = os.path.join(datadir,'dataset.hdf5'), 
-                              index = val_idx)
+    val_set = HEDataset(data_dir = datadir,
+                        transform = test_transform, 
+                        option = "Validation")
     
 
 #     val_sampler = torch.utils.data.SequentialSampler(val_set)
@@ -80,8 +96,9 @@ def trainval(exp_dict, savedir_base, datadir, folddir, reset=False, num_workers=
                             num_workers=num_workers)
     
     # test set
-    test_set = HEDataset(datapath = os.path.join(datadir,'dataset.hdf5'), 
-                              index = ts_idx)
+    test_set = HEDataset(data_dir = datadir, 
+                         transform = test_transform,
+                         option = "Test")
     
 
 #     val_sampler = torch.utils.data.SequentialSampler(val_set)
