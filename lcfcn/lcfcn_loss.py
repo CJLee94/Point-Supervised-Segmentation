@@ -9,21 +9,32 @@ from skimage import morphology as morph
 # from skimage.morphology import watershed
 # from skimage.segmentation import find_boundaries
 
-def compute_weighted_crossentropy(images,logits,points, bkgs):
-    points_numpy = points.detach().cpu().numpy()
-    eps = 1e-6
-    loss = 0.0
-    for p_numpy, p, log, bkg in zip(points_numpy,points,logits, bkgs):
-        log_SiGi_f = torch.sum(p*torch.log(eps+log[0]))
-        log_SiGi_f /= torch.sum(p) if torch.sum(p)!=0 else 1
-        log_SiGi_b = torch.sum(bkg*torch.log(eps+1-log[0]))
-        log_SiGi_b /= torch.sum(bkg) if torch.sum(bkg)!=0 else 1
-        loss += -log_SiGi_f-log_SiGi_b*0.1
+def compute_weighted_crossentropy(logits, points, bkgs):
+    prob_log = torch.log_softmax(logits, 1)
+    f_loss = F.nll_loss(prob_log, points, 
+                        ignore_index=0)
+    b_loss = F.nll_loss(prob_log, 1-bkgs, 
+                        ignore_index=1)
+    return f_loss+0.1*b_loss
+
+def compute_obj_loss(prob, obj, eps = 1e-6):
+    prob = F.softmax(prob, 1)
+    return torch.mean(-obj*torch.log(eps+prob[:,1])-(1-obj)*torch.log(eps+prob[:,0]))
+# def compute_weighted_crossentropy(images,logits,points, bkgs):
+#     points_numpy = points.detach().cpu().numpy()
+#     eps = 1e-6
+#     loss = 0.0
+#     for p_numpy, p, log, bkg in zip(points_numpy,points,logits, bkgs):
+#         log_SiGi_f = torch.sum(p*torch.log(eps+log[0]))
+#         log_SiGi_f /= torch.sum(p) if torch.sum(p)!=0 else 1
+#         log_SiGi_b = torch.sum(bkg*torch.log(eps+1-log[0]))
+#         log_SiGi_b /= torch.sum(bkg) if torch.sum(bkg)!=0 else 1
+#         loss += -log_SiGi_f-log_SiGi_b*0.1
     
-    if torch.isnan(loss):
-        import pdb
-        pdb.set_trace()
-    return loss
+#     if torch.isnan(loss):
+#         import pdb
+#         pdb.set_trace()
+#     return loss
     
 
 def compute_lcfcn_loss(logits, points, reduction='mean',
