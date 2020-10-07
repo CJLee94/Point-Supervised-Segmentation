@@ -28,7 +28,7 @@ class PONet(torch.nn.Module):
     def __init__(self, exp_dict, train_set):
         super().__init__()
         self.exp_dict = exp_dict
-        self.n_classes = 2
+        self.n_classes = 8
         self.exp_dict = exp_dict
         
         self.model_base = smp.FPN('resnet50',classes=self.n_classes,encoder_weights = None, decoder_merge_policy = 'cat')
@@ -127,11 +127,15 @@ class PONet(torch.nn.Module):
         bkgs = batch["bkg"].long().to(self.device)
         objs = batch["obj"].to(self.device)
         masks = batch["gt"].to(self.device)
+        regions = batch["region"].to(self.device)
         logits = self.model_base.forward(images)
 
 #         import pdb
 #         pdb.set_trace()
-        loss = lcfcn_loss.compute_obj_loss(logits, objs)+0.5*lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs)
+
+#         loss = F.cross_entropy(logits, masks)
+        loss = lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs)
+#         loss = lcfcn_loss.compute_obj_loss(logits, objs, regions)+lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs)
 
         loss.backward()
 
@@ -158,7 +162,7 @@ class PONet(torch.nn.Module):
         logits = self.model_base.forward(images)
         
         prob = logits.sigmoid()
-        val_loss = self.iou_pytorch(prob[:,1], mask)
+        val_loss = self.iou_pytorch(prob, mask)
 
         return {'valloss': val_loss.item()}
         
@@ -168,7 +172,7 @@ class PONet(torch.nn.Module):
         mask = batch["gt"].to(self.device)
         logits = self.model_base.forward(images)
         prob = logits.sigmoid()
-        test_loss = self.iou_pytorch(prob[:,1], mask)
+        test_loss = self.iou_pytorch(prob, mask)
         return {"testloss": test_loss.item()}
         
         
@@ -180,10 +184,13 @@ class PONet(torch.nn.Module):
         mask = batch["gt"].to(self.device)
         logits = self.model_base.forward(images)
         prob = logits.sigmoid()
+        seg = torch.argmax(prob, dim = 1)
+#         import pdb
+#         pdb.set_trace()
         fig,axes = plt.subplots(1,3,figsize = (30,10))
         axes[0].imshow(images[0].detach().cpu().numpy().transpose(1,2,0))
-        axes[1].imshow(mask[0].detach().cpu().numpy())
-        axes[2].imshow(prob[0,1].detach().cpu().numpy()>0.5)
+        axes[1].imshow(mask[0].detach().cpu().numpy(), vmax = 7, vmin = 0)
+        axes[2].imshow(seg[0].detach().cpu().numpy(), vmax = 7, vmin = 0)
         for ax in axes:
             ax.axis('off')
         fig.savefig(savedir_image)
@@ -191,11 +198,16 @@ class PONet(torch.nn.Module):
         
     def iou_pytorch(self, outputs: torch.Tensor, labels: torch.Tensor):
         SMOOTH = 1e-6
-        outputs = outputs.squeeze(1).round().bool() if not outputs.dtype is torch.bool else outputs
-        labels = labels.squeeze(1).round().bool() if not labels.dtype is torch.bool else labels
-        intersection = (outputs & labels).float().sum((1, 2))  # Will be zero if Truth=0 or Prediction=0
-        union = (outputs | labels).float().sum((1, 2))         # Will be zzero if both are 0
+        outputs = torch.argmax(outputs,dim = 1) if not outputs.dtype is torch.bool else outputs
+        labels = labels.squeeze(1).round() if not labels.dtype is torch.bool else labels
+        iou = 0.0
+        for cls in range(8):
+            outputs_cls = outputs==cls
+            labels_cls = labels==cls
+            intersection = (outputs_cls & labels_cls).float().sum((1, 2))  # Will be zero if Truth=0 or Prediction=0
+            union = (outputs_cls | labels_cls).float().sum((1, 2))         # Will be zzero if both are 0
 
-        iou = (intersection + SMOOTH) / (union + SMOOTH)  # We smooth our devision to avoid 0/0
-
+            iou += (intersection + SMOOTH) / (union + SMOOTH)  # We smooth our devision to avoid 0/0
+        
+        iou/=8
         return torch.mean(iou)

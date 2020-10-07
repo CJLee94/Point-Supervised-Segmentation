@@ -57,7 +57,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
 #                                keypoint_params = A.KeypointParams(format='xy'), 
 #                                additional_targets={'bkg':'mask', 
 #                                                    'obj':'mask'})
-    data_transform = A.Compose([A.RandomCrop(64,64), 
+    data_transform = A.Compose([A.RandomCrop(128,128), 
                            A.Flip(), 
                            A.IAAAffine(), 
                            A.Rotate(), 
@@ -66,7 +66,14 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                            A.GaussNoise(30, p=0.3)], 
                           keypoint_params = A.KeypointParams(format='xy'), 
                           additional_targets = {'mask0':'mask', 
-                                                'mask1':'mask'})
+                                                'mask1':'mask',
+                                                'mask2':'mask',
+                                                'keypoints0':'keypoints', 
+                                                'keypoints1':'keypoints', 
+                                                'keypoints2':'keypoints', 
+                                                'keypoints3':'keypoints', 
+                                                'keypoints4':'keypoints', 
+                                                'keypoints5':'keypoints'})
     
 #     data_transform = [
 #         Flip(p=0.5),
@@ -127,13 +134,13 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # Train & Val
     # ==================
     print("Starting experiment at epoch %d" % (s_epoch))
-
-    train_sampler = torch.utils.data.RandomSampler(
-        train_set, replacement=True, num_samples=2*len(val_set))
+    
+#     train_sampler = torch.utils.data.RandomSampler(
+#         train_set, replacement=True, num_samples=2*len(val_set))
 
     train_loader = DataLoader(train_set,
                               batch_size=exp_dict["batch_size"], 
-                              drop_last=True, num_workers=num_workers)
+                              num_workers=num_workers)
 
     for e in range(s_epoch, exp_dict['max_epoch']):
         # Validate only at the start of each cycle
@@ -145,7 +152,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
         # Validate and Visualize the model
         val_dict = model.val_on_loader(val_loader, 
                         savedir_images=os.path.join(savedir, "images"),
-                        n_images=3)
+                        n_images=7)
         score_dict.update(val_dict)
 
         # Get new score_dict
