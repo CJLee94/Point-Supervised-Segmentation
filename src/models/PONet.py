@@ -24,14 +24,43 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 
 
+def get_model_base(model_base_dict, in_channels=3, n_classes=2):
+    if model_base_dict['pretrained']:
+        encoder_weights = 'imagenet'
+    else:
+        encoder_weights = None
+    if model_base_dict['name'].lower() == 'fpn':
+        return smp.FPN(
+            'resnet50',
+            in_channels=in_channels,
+            classes=n_classes,
+            encoder_weights=encoder_weights,
+            decoder_merge_policy='cat'
+        )
+    elif model_base_dict['name'].lower() == 'unet':
+        return smp.Unet(
+            'densenet121',
+            in_channels=in_channels,
+            classes=n_classes,
+            encoder_weights=encoder_weights
+        )
+    elif model_base_dict['name'].lower() == 'unet_half':
+        return smp.Unet(
+            'densenet121',
+            encoder_depth=3,
+            in_channels=in_channels,
+            classes=n_classes,
+            encoder_weights=encoder_weights
+        )
+
+
 class PONet(torch.nn.Module):
     def __init__(self, exp_dict, train_set):
         super().__init__()
         self.exp_dict = exp_dict
-        self.n_classes = 8
+        self.n_classes = train_set.n_classes
         self.exp_dict = exp_dict
-        
-        self.model_base = smp.FPN('resnet50',classes=self.n_classes,encoder_weights = None, decoder_merge_policy = 'cat')
+        self.model_base = get_model_base(exp_dict["model_base"], n_classes=self.n_classes)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         
         if torch.cuda.device_count() > 1:
@@ -40,6 +69,11 @@ class PONet(torch.nn.Module):
             self.model_base = nn.DataParallel(self.model_base)
 
         self.model_base.to(self.device)
+
+        self.lam_full = exp_dict["weight"][0]
+        self.lam_point = exp_dict["weight"][1]
+        self.lam_obj = exp_dict["weight"][2]
+        self.bkg_enable = exp_dict["bkg_enable"]
 
         if self.exp_dict["optimizer"] == "adam":
             self.opt = torch.optim.Adam(
@@ -83,7 +117,7 @@ class PONet(torch.nn.Module):
             score_dict = self.val_on_batch(batch)
             val_meter.add(score_dict['valloss'], batch['images'].shape[0])
             
-            pbar.update(1)
+            # pbar.update(1)
 
             if savedir_images and i < n_images:
                 os.makedirs(savedir_images, exist_ok=True)
@@ -91,6 +125,7 @@ class PONet(torch.nn.Module):
                     savedir_images, "%d.jpg" % i))
                 
                 pbar.set_description("Validating. MAE: %.4f" % val_meter.get_avg_score())
+                pbar.update(1)
 
         pbar.close()
         val_mae = val_meter.get_avg_score()
@@ -116,8 +151,7 @@ class PONet(torch.nn.Module):
         test_iou = test_meter.get_avg_score()
         test_dict = {'test_iou':test_iou, 'test_score':-test_iou}
         return test_dict
-    
-    
+
     def train_on_batch(self, batch, **extras):
         self.opt.zero_grad()
         self.train()
@@ -126,23 +160,21 @@ class PONet(torch.nn.Module):
         points = batch["points"].long().to(self.device)
         bkgs = batch["bkg"].long().to(self.device)
         objs = batch["obj"].to(self.device)
-        masks = batch["gt"].to(self.device)
+        masks = batch["gt"].long().to(self.device)
         regions = batch["region"].to(self.device)
         logits = self.model_base.forward(images)
 
-#         import pdb
-#         pdb.set_trace()
-
-#         loss = F.cross_entropy(logits, masks)
-        loss = lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs)
-#         loss = lcfcn_loss.compute_obj_loss(logits, objs, regions)+lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs)
+        loss = self.lam_full*F.cross_entropy(logits, masks) + \
+               lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
+                                                        weights=self.lam_point,
+                                                        bkg_enable=self.bkg_enable) + \
+               self.lam_obj*lcfcn_loss.compute_obj_loss(logits, objs, regions)
 
         loss.backward()
 
         self.opt.step()
 
         return {"train_loss":loss.item()}
-
 
     def get_state_dict(self):
         state_dict = {"model": self.model_base.state_dict(),
@@ -158,9 +190,7 @@ class PONet(torch.nn.Module):
         self.eval()
         images = batch["images"].to(self.device)
         mask = batch["gt"].to(self.device)
-        
         logits = self.model_base.forward(images)
-        
         prob = logits.sigmoid()
         val_loss = self.iou_pytorch(prob, mask)
 

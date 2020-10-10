@@ -18,6 +18,6 @@ def get_model(model_dict, exp_dict=None, train_set=None):
     elif model_dict["name"] in ["penet"]:
         model = PENet.PENet(exp_dict, train_set =train_set)
     elif model_dict["name"] in ["ponet"]:
-        model = PONet.PONet(exp_dict, train_set =train_set)
+        model = PONet.PONet(exp_dict['model'], train_set =train_set)
     return model
         

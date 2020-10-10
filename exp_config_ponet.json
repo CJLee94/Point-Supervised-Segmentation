@@ -1,9 +1,18 @@
 {
-    "batch_size": 1,
-    "lr": 0.001,
-    "max_epoch": 20,
+    "batch_size": 64,
+    "max_epoch": 100,
     "model": {
-        "name": "ponet"
+        "name": "ponet",
+        "model_base":{
+	    "name":"fpn",
+            "pretrained":0
+        },
+	"weight":[0,[1,1],1],
+	"bkg_enable":1,
+        "lr": 0.001,
+        "optimizer": "adam"
     },
-    "optimizer": "adam"
+    "patch_size":128,
+    "bkg_opt":"watershed",
+    "n_classes":8
 }
