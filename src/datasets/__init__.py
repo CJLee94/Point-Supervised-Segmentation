@@ -85,6 +85,6 @@ class HEDataset(Dataset):
     
     def __len__(self):
         if self.option is "Train":
-            return 500*self.files_no
+            return self.augmul*self.files_no
         else:
             return self.files_no
