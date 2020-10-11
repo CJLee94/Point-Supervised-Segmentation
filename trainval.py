@@ -108,6 +108,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
 
     train_loader = DataLoader(train_set,
                               batch_size=exp_dict["batch_size"], 
+                              shuffle=True,
                               num_workers=num_workers)
 
     for e in range(s_epoch, exp_dict['max_epoch']):

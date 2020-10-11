@@ -1,22 +1,8 @@
 import torch
 import torch.nn.functional as F
-import torchvision
-from torchvision import transforms
-import os, tqdm
-import numpy as np
-import time
-from sklearn.metrics import confusion_matrix
-import skimage
+import os
+import tqdm
 from lcfcn import lcfcn_loss
-from src import models
-from haven import haven_img as hi
-from scipy import ndimage
-from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw 
-import cv2
-from haven import haven_img
-from haven import haven_utils as hu
 from src.models import base_networks, metrics
 import segmentation_models_pytorch as smp
 import torch.nn as nn
@@ -37,6 +23,18 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
             encoder_weights=encoder_weights,
             decoder_merge_policy='cat'
         )
+    elif model_base_dict['name'].lower() == 'fpn_half':
+        return smp.FPN(
+            'resnet50',
+            encoder_depth=3,
+            in_channels=in_channels,
+            classes=n_classes,
+            encoder_weights=encoder_weights,
+            decoder_pyramid_channels=64,
+            decoder_segmentation_channels=32,
+            upsampling=1,
+            decoder_merge_policy='cat'
+        )
     elif model_base_dict['name'].lower() == 'unet':
         return smp.Unet(
             'densenet121',
@@ -52,6 +50,8 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
             classes=n_classes,
             encoder_weights=encoder_weights
         )
+    else:
+        raise TypeError('The network of your choice is not available currently, Sorry!')
 
 
 class PONet(torch.nn.Module):
@@ -104,10 +104,10 @@ class PONet(torch.nn.Module):
         self.scheduler.step(train_meter.get_avg_score())
         pbar.close()
         
-        return {'train_loss':train_meter.get_avg_score()}
+        return {'train_loss': train_meter.get_avg_score()}
 
     @torch.no_grad()
-    def val_on_loader(self, val_loader, savedir_images=None, n_images = 3):
+    def val_on_loader(self, val_loader, savedir_images=None, n_images=3):
         self.eval()
 
         n_batches = len(val_loader)
@@ -129,7 +129,7 @@ class PONet(torch.nn.Module):
 
         pbar.close()
         val_mae = val_meter.get_avg_score()
-        val_dict = {'val_mae':val_mae, 'val_score':val_mae}
+        val_dict = {'val_mae': val_mae, 'val_score': val_mae}
         return val_dict
     
     @torch.no_grad()
@@ -149,7 +149,7 @@ class PONet(torch.nn.Module):
 
         pbar.close()
         test_iou = test_meter.get_avg_score()
-        test_dict = {'test_iou':test_iou, 'test_score':-test_iou}
+        test_dict = {'test_iou': test_iou, 'test_score': -test_iou}
         return test_dict
 
     def train_on_batch(self, batch, **extras):
@@ -174,11 +174,11 @@ class PONet(torch.nn.Module):
 
         self.opt.step()
 
-        return {"train_loss":loss.item()}
+        return {"train_loss": loss.item()}
 
     def get_state_dict(self):
         state_dict = {"model": self.model_base.state_dict(),
-                      "opt":self.opt.state_dict()}
+                      "opt": self.opt.state_dict()}
 
         return state_dict
 
@@ -204,40 +204,37 @@ class PONet(torch.nn.Module):
         prob = logits.sigmoid()
         test_loss = self.iou_pytorch(prob, mask)
         return {"testloss": test_loss.item()}
-        
-        
-        
-    
+
     def vis_on_batch(self, batch, savedir_image):
         self.eval()
         images = batch["images"].to(self.device)
         mask = batch["gt"].to(self.device)
         logits = self.model_base.forward(images)
         prob = logits.sigmoid()
-        seg = torch.argmax(prob, dim = 1)
+        seg = torch.argmax(prob, dim=1)
 #         import pdb
 #         pdb.set_trace()
-        fig,axes = plt.subplots(1,3,figsize = (30,10))
-        axes[0].imshow(images[0].detach().cpu().numpy().transpose(1,2,0))
-        axes[1].imshow(mask[0].detach().cpu().numpy(), vmax = 7, vmin = 0)
-        axes[2].imshow(seg[0].detach().cpu().numpy(), vmax = 7, vmin = 0)
+        fig, axes = plt.subplots(1, 3, figsize=(30, 10))
+        axes[0].imshow(images[0].detach().cpu().numpy().transpose(1, 2, 0))
+        axes[1].imshow(mask[0].detach().cpu().numpy(), vmax=7, vmin=0)
+        axes[2].imshow(seg[0].detach().cpu().numpy(), vmax=7, vmin=0)
         for ax in axes:
             ax.axis('off')
         fig.savefig(savedir_image)
         plt.close()
-        
+
     def iou_pytorch(self, outputs: torch.Tensor, labels: torch.Tensor):
-        SMOOTH = 1e-6
-        outputs = torch.argmax(outputs,dim = 1) if not outputs.dtype is torch.bool else outputs
-        labels = labels.squeeze(1).round() if not labels.dtype is torch.bool else labels
+        smooth = 1e-6
+        outputs = torch.argmax(outputs,dim = 1) if outputs.dtype is not torch.bool else outputs
+        labels = labels.squeeze(1).round() if labels.dtype is not torch.bool else labels
         iou = 0.0
         for cls in range(8):
-            outputs_cls = outputs==cls
-            labels_cls = labels==cls
+            outputs_cls = outputs == cls
+            labels_cls = labels == cls
             intersection = (outputs_cls & labels_cls).float().sum((1, 2))  # Will be zero if Truth=0 or Prediction=0
             union = (outputs_cls | labels_cls).float().sum((1, 2))         # Will be zzero if both are 0
 
-            iou += (intersection + SMOOTH) / (union + SMOOTH)  # We smooth our devision to avoid 0/0
+            iou += (intersection + smooth) / (union + smooth)  # We smooth our devision to avoid 0/0
         
-        iou/=8
+        iou /= 8
         return torch.mean(iou)
