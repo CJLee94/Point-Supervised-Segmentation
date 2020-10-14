@@ -11,13 +11,15 @@ from haven import haven_utils as hu
 
 class HEDataset(Dataset):
     
-    def __init__(self, data_dir, transform=None, option="Train", random_seed=123, n_classes=1, augmul=500):
+    def __init__(self, data_dir, transform=None, option="Train",
+                 random_seed=123, n_classes=1, augmul=500, obj_option=None):
 
         self.transform = transform
         self.data_dir = data_dir
         self.n_classes = n_classes
         self.option = option
         self.files_no = len(glob.glob(os.path.join(self.data_dir, option, "Norms", "*.png")))
+        self.obj_option = obj_option
 
         if self.transform:
             self.augmul = augmul
@@ -28,7 +30,10 @@ class HEDataset(Dataset):
     def __getitem__(self, ind):
         real_ind = ind % self.files_no + 1
         image = sio.imread(os.path.join(self.data_dir, self.option, "Norms", self.option.lower()+'_'+str(real_ind)+".png"))[..., :3]
-        obj = sio.imread(os.path.join(self.data_dir, self.option, "Objs", self.option.lower()+'_'+str(real_ind)+".tif"))
+        if self.obj_option == "Gauss":
+            obj = sio.imread(os.path.join(self.data_dir, self.option, "GaussObj", self.option.lower() + '_' + str(real_ind) + ".tif"))
+        else:
+            obj = sio.imread(os.path.join(self.data_dir, self.option, "Objs", self.option.lower()+'_'+str(real_ind)+".tif"))
         bkg = sio.imread(os.path.join(self.data_dir, self.option, "Bkgs", self.option.lower()+'_'+str(real_ind)+".tif"))
         mask = sio.imread(os.path.join(self.data_dir, self.option, "GTs", self.option.lower()+'_'+str(real_ind)+".tif"))
         region = sio.imread(os.path.join(self.data_dir, self.option, "Regions", self.option.lower()+'_'+str(real_ind)+".tif"))
