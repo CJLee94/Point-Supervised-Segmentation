@@ -11,7 +11,7 @@ from src.datasets import HEDataset
 import glob
 import os
 
-cudnn.benchmark = True
+# cudnn.benchmark = True
 
 # optimize the code structure so that we can choose different hyperparamters
 ## Regularizer: Point, Point+Gaussian Obj, Point+Watershed Obj, Point+Image Loss
@@ -22,7 +22,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # bookkeepting stuff
     # ==================
 
-    savedir = os.path.join(savedir_base, exp_dict["model"]["name"])
+    savedir = os.path.join(savedir_base, hu.hash_dict(exp_dict))
     os.makedirs(savedir, exist_ok=True)
     
     if reset:
@@ -58,7 +58,8 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                           n_classes=exp_dict["n_classes"],
                           transform=data_transform, 
                           option="Train",
-                          random_seed=random_seed)
+                          random_seed=random_seed,
+                          obj_option=exp_dict["obj"])
 
     test_transform = A.Compose([A.Resize(1024, 1024)],
                                keypoint_params=A.KeypointParams(format='xy'),
@@ -149,7 +150,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # if s_epoch==exp_dict['max_epoch']:
     #     e = s_epoch
     test_dict = model.test_on_loader(test_loader)
-    hu.save_pkl(os.path.join(savedir, 'test_iou.pkl'),test_dict)
+    hu.save_pkl(os.path.join(savedir, 'test_iou.pkl'), test_dict)
     print('Test IoU:{}'.format(test_dict["test_iou"]))
     print('Experiment completed et epoch %d' % e)
 
