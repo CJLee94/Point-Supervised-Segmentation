@@ -6,12 +6,14 @@ from src import models
 import argparse
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
+import torch
 import albumentations as A
-from src.datasets import HEDataset
+from src.datasets import HEDataset, HEDataset_Fast
 import glob
 import os
 
-# cudnn.benchmark = True
+cudnn.benchmark = False
+cudnn.deterministic = True
 
 # optimize the code structure so that we can choose different hyperparamters
 ## Regularizer: Point, Point+Gaussian Obj, Point+Watershed Obj, Point+Image Loss
@@ -34,8 +36,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # ==================
     # train set
     
-    data_transform = A.Compose([A.RandomCrop(exp_dict["patch_size"], exp_dict["patch_size"]),
-                                A.Flip(p=0.3),
+    data_transform = A.Compose([A.Flip(p=0.3),
                                 A.IAAAffine(p=0.3),
                                 A.Rotate(p=0.3),
                                 A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3),
@@ -54,12 +55,14 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     
     random.seed(20201009)
     random_seed = random.randint(0, 20201009)
-    train_set = HEDataset(data_dir=datadir,
-                          n_classes=exp_dict["n_classes"],
-                          transform=data_transform, 
-                          option="Train",
-                          random_seed=random_seed,
-                          obj_option=exp_dict["obj"])
+    train_set = HEDataset_Fast(data_dir=datadir,
+                               n_classes=exp_dict["n_classes"],
+                               transform=data_transform,
+                               option="Train",
+                               random_seed=random_seed,
+                               obj_option=exp_dict["obj"],
+                               patch_size=exp_dict["patch_size"],
+                               bkg_option=exp_dict["bkg"])
 
     test_transform = A.Compose([A.Resize(1024, 1024)],
                                keypoint_params=A.KeypointParams(format='xy'),
@@ -84,7 +87,8 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                              num_workers=num_workers)
     # Model
     # ==================
-    
+
+    torch.manual_seed(20201009)
     model = models.get_model(exp_dict['model'], exp_dict=exp_dict, train_set=train_set).cuda()
 
     model_path = os.path.join(savedir, "model.pth")
@@ -149,6 +153,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
 
     # if s_epoch==exp_dict['max_epoch']:
     #     e = s_epoch
+    model.load_state_dict(hu.torch_load(os.path.join(savedir, "model_best.pth")))
     test_dict = model.test_on_loader(test_loader)
     hu.save_pkl(os.path.join(savedir, 'test_iou.pkl'), test_dict)
     print('Test IoU:{}'.format(test_dict["test_iou"]))

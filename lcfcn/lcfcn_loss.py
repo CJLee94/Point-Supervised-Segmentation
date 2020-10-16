@@ -18,12 +18,10 @@ def compute_weighted_crossentropy(logits, points, bkgs, weights=[1, 1], bkg_enab
     b_loss = F.nll_loss(probs_log, 1-bkgs, 
                         ignore_index=1)
     img_loss = compute_image_loss(probs, points)
-#     import pdb
-#     pdb.set_trace()
     return weights[0]*(f_loss+bkg_enable*b_loss)+weights[1]*img_loss
 
 
-def compute_obj_loss(prob, obj, regions, thres = 0.7,eps = 1e-6):
+def compute_obj_loss(prob, obj, eps=1e-6):
     prob = torch.softmax(prob, dim=1)
     # cls = prob.shape[1]
     b_loss = -(1-obj)*torch.log(eps+prob[:, 0])
@@ -107,9 +105,9 @@ def compute_image_loss(logits, points):
     n, k, h, w = logits.size()
 
     # get target
-    labels = torch.zeros(n,k, device=logits.device)
+    labels = torch.zeros(n, k, device=logits.device)
     for i in range(n):
-        labels[i,points[i].unique()] = 1
+        labels[i, points[i].unique()] = 1
     logits_max = logits.view(n, k, h*w).max(2)[0]
 
     loss = F.binary_cross_entropy(logits_max, labels, reduction='mean')

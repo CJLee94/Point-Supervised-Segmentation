@@ -9,7 +9,6 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 
-
 def get_model_base(model_base_dict, in_channels=3, n_classes=2):
     if model_base_dict['pretrained']:
         encoder_weights = 'imagenet'
@@ -52,7 +51,6 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
         )
     else:
         raise TypeError('The network of your choice is not available currently, Sorry!')
-
 
 class PONet(torch.nn.Module):
     def __init__(self, exp_dict, train_set):
@@ -161,14 +159,14 @@ class PONet(torch.nn.Module):
         bkgs = batch["bkg"].long().to(self.device)
         objs = batch["obj"].to(self.device)
         masks = batch["gt"].long().to(self.device)
-        regions = batch["region"].to(self.device)
+        # regions = batch["region"].to(self.device)
         logits = self.model_base.forward(images)
 
         loss = self.lam_full*F.cross_entropy(logits, masks) + \
                lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
                                                         weights=self.lam_point,
                                                         bkg_enable=self.bkg_enable) + \
-               self.lam_obj*lcfcn_loss.compute_obj_loss(logits, objs, regions)
+               self.lam_obj*lcfcn_loss.compute_obj_loss(logits, objs)
 
         loss.backward()
 

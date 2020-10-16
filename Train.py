@@ -12,21 +12,23 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-e', '--exp_dict', required=True, type=str)
+parser.add_argument('-d', '--data_dir', type=str, default='./CoNSeP/')
+parser.add_argument('-s', '--save_dir', type=str, default='./Result')
 
 args = parser.parse_args()
 
-datadir = './CoNSeP/' 
-
-# exp_dict_file = 'exp_config_ponet.json'
-# exp_dict_file = args.exp_dict
+datadir = args.data_dir
 
 exp_dict = hu.load_json(args.exp_dict)
-savedir_base = "./Result"
+savedir_base = args.save_dir
 os.makedirs(savedir_base, exist_ok=True)
 trainval(exp_dict,
          savedir_base,
          datadir,
-         reset=False,
-         num_workers=25
+         reset=True,
+         num_workers=12
          )
-shutil.copy(args.exp_dict, os.path.join(savedir_base, hu.hash_dict(exp_dict), args.exp_dict))
+shutil.copy(args.exp_dict,
+            os.path.join(savedir_base,
+                         hu.hash_dict(exp_dict),
+                         os.path.split(args.exp_dict)[-1]))

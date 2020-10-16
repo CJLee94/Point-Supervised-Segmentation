@@ -1,0 +1,19 @@
+{
+    "batch_size": 64,
+    "max_epoch": 1,
+    "model": {
+        "name": "ponet",
+        "model_base":{
+	    "name":"fpn",
+            "pretrained":0
+        },
+	"weight":[0,[1,1],0],
+	"bkg_enable":1,
+        "lr": 0.001,
+        "optimizer": "adam"
+    },
+    "patch_size":128,
+    "bkg":"Bkgs_v",
+    "n_classes":8,
+    "obj":"Objs_g"
+}
