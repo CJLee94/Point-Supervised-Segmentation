@@ -25,7 +25,7 @@ os.makedirs(savedir_base, exist_ok=True)
 trainval(exp_dict,
          savedir_base,
          datadir,
-         reset=False,
+         reset=True,
          num_workers=12
          )
 shutil.copy(args.exp_dict,
