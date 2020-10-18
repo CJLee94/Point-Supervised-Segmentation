@@ -21,34 +21,15 @@ def compute_weighted_crossentropy(logits, points, bkgs, weights=[1, 1], bkg_enab
     return weights[0]*(f_loss+bkg_enable*b_loss)+weights[1]*img_loss
 
 
-def compute_obj_loss(prob, obj, eps=1e-6):
+def compute_obj_loss(prob, obj, region, eps=1e-6):
     prob = torch.softmax(prob, dim=1)
-    # cls = prob.shape[1]
+    ncls = prob.shape[1]
     b_loss = -(1-obj)*torch.log(eps+prob[:, 0])
-    f_loss = -obj*torch.log(eps+torch.sum(prob[:, 1:],dim=1))
-#     L = 0
-#     img_loss
-#     for i in range(cls):
-#         if i > 0:
-#             obj_i = torch.max(obj*(regions==i),dim=(1,2))
-#             L += obj_i>0.7
-#             f_loss -= *torch.log(eps+prob[:,i])
-    return torch.mean(f_loss+b_loss)
-# def compute_weighted_crossentropy(images,logits,points, bkgs):
-#     points_numpy = points.detach().cpu().numpy()
-#     eps = 1e-6
-#     loss = 0.0
-#     for p_numpy, p, log, bkg in zip(points_numpy,points,logits, bkgs):
-#         log_SiGi_f = torch.sum(p*torch.log(eps+log[0]))
-#         log_SiGi_f /= torch.sum(p) if torch.sum(p)!=0 else 1
-#         log_SiGi_b = torch.sum(bkg*torch.log(eps+1-log[0]))
-#         log_SiGi_b /= torch.sum(bkg) if torch.sum(bkg)!=0 else 1
-#         loss += -log_SiGi_f-log_SiGi_b*0.1
-    
-#     if torch.isnan(loss):
-#         import pdb
-#         pdb.set_trace()
-#     return loss
+    f_loss = 0
+    for cls in torch.arange(1, ncls):
+        f_loss += -obj*(region == cls)*torch.log(eps+torch.sum(prob[:, 1:], dim=1))
+
+    return torch.mean(f_loss/ncls+b_loss)
     
 
 def compute_lcfcn_loss(logits, points, reduction='mean',

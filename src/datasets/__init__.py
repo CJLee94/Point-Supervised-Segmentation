@@ -121,7 +121,7 @@ class HEDataset_Fast(Dataset):
 
         if self.transform:
             file_list = self.get_train_names(real_ind)
-            image, obj, bkg, mask, points = self.random_read_subregion(file_list, random_seed=self.random_seeds[ind])
+            image, obj, bkg, mask, region, points = self.random_read_subregion(file_list, random_seed=self.random_seeds[ind])
 
             random_seed = self.random_seeds[ind]
 
@@ -137,7 +137,8 @@ class HEDataset_Fast(Dataset):
                                          keypoints5=points["7"],
                                          mask=mask,
                                          mask0=bkg,
-                                         mask1=obj)
+                                         mask1=obj,
+                                         mask2=region)
             image = transformed["image"]
             points["1"] = np.array(transformed["keypoints"]).astype(int)
             points["2"] = np.array(transformed["keypoints0"]).astype(int)
@@ -149,7 +150,7 @@ class HEDataset_Fast(Dataset):
             mask = transformed["mask"]
             bkg = transformed["mask0"]
             obj = transformed["mask1"]
-            # region = transformed["mask2"]
+            region = transformed["mask2"]
 
             point_label = np.zeros_like(mask)
             counts = 0
@@ -162,7 +163,7 @@ class HEDataset_Fast(Dataset):
                     'bkg': torch.FloatTensor(bkg),
                     'obj': torch.FloatTensor(obj),
                     'gt': torch.FloatTensor(mask),
-                    # 'region': torch.FloatTensor(region),
+                    'region': torch.FloatTensor(region),
                     'counts': counts,
                     'meta': {'index': ind}}
         else:
@@ -195,8 +196,11 @@ class HEDataset_Fast(Dataset):
                             self.option.lower() + '_' + str(number) + ".tif"), \
                os.path.join(self.data_dir, self.option, "GTs",
                             self.option.lower() + '_' + str(number) + ".tif"), \
+               os.path.join(self.data_dir, self.option, "Regions",
+                            self.option.lower() + '_' + str(number) + ".tif"), \
                os.path.join(self.data_dir, self.option, "Pts",
                             self.option.lower() + '_' + str(number) + ".json")
+
 
     def random_read_subregion(self, file_list, random_seed=False):
         if random_seed:
