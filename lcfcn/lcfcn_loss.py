@@ -18,7 +18,7 @@ def compute_weighted_crossentropy(logits, points, bkgs, weights=[1, 1], bkg_enab
     b_loss = F.nll_loss(probs_log, 1-bkgs, 
                         ignore_index=1)
     img_loss = compute_image_loss(probs, points)
-    return weights[0]*(f_loss+bkg_enable*b_loss)+weights[1]*img_loss
+    return weights[0]*(f_loss+bkg_enable*0.1*b_loss)+weights[1]*img_loss
 
 
 def compute_obj_loss(prob, obj, region, eps=1e-6):
@@ -29,7 +29,7 @@ def compute_obj_loss(prob, obj, region, eps=1e-6):
     for cls in torch.arange(1, ncls):
         f_loss += -obj*(region == cls)*torch.log(eps+torch.sum(prob[:, 1:], dim=1))
 
-    return torch.mean(f_loss/ncls+b_loss)
+    return torch.mean(f_loss/(ncls-1)+b_loss)
     
 
 def compute_lcfcn_loss(logits, points, reduction='mean',
