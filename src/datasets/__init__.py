@@ -13,7 +13,7 @@ import SimpleITK as sitk
 class HEDataset(Dataset):
     
     def __init__(self, data_dir, transform=None, option="Train",
-                 random_seed=123, n_classes=1, augmul=500, obj_option=None):
+                 random_seed=123, n_classes=1, augmul=1, obj_option=None):
 
         self.transform = transform
         self.data_dir = data_dir

@@ -13,7 +13,7 @@
         "optimizer": "adam"
     },
     "patch_size":128,
-    "bkg":"Bkgs",
+    "bkg":"Bkgs_v",
     "n_classes":8,
     "obj":"Objs"
 }
