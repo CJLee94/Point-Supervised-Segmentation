@@ -11,14 +11,14 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-e', '--exp_dict', required=True, type=str)
+# parser.add_argument('-e', '--exp_dict', required=True, type=str)
 parser.add_argument('-d', '--data_dir', type=str, default='./CoNSeP/')
 parser.add_argument('-s', '--save_dir', type=str, default='./Result')
 
 args = parser.parse_args()
 
 datadir = args.data_dir
-
+args.exp_dict = "Experiment_Exp/exp_config_10.json"
 exp_dict = hu.load_json(args.exp_dict)
 savedir_base = args.save_dir
 os.makedirs(savedir_base, exist_ok=True)
