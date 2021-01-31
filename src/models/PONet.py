@@ -37,7 +37,7 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
         )
     elif model_base_dict['name'].lower() == 'unet':
         return smp.Unet(
-            'densenet121',
+            'mobilenet_v2',
             in_channels=in_channels,
             classes=n_classes,
             encoder_weights=encoder_weights
@@ -48,7 +48,8 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
             encoder_depth=3,
             in_channels=in_channels,
             classes=n_classes,
-            encoder_weights=encoder_weights
+            encoder_weights=encoder_weights,
+            decoder_channels=64
         )
     else:
         raise TypeError('The network of your choice is not available currently, Sorry!')
@@ -158,6 +159,7 @@ class PONet(torch.nn.Module):
         self.train()
 
         images = batch["images"].to(self.device)
+        # print(images[30,0,56,2])
         points = batch["points"].long().to(self.device)
         bkgs = batch["bkg"].long().to(self.device)
         objs = batch["obj"].to(self.device)
