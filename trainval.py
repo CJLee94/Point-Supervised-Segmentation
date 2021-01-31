@@ -11,7 +11,15 @@ import albumentations as A
 from src.datasets import HEDataset, HEDataset_Fast
 import glob
 import os
+import numpy as np
 
+seed = 20201009
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+np.random.seed(seed)  # Numpy module.
+random.seed(seed)  # Python random module.
+torch.manual_seed(seed)
 cudnn.benchmark = False
 cudnn.deterministic = True
 
@@ -53,7 +61,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                                                    'keypoints4': 'keypoints',
                                                    'keypoints5': 'keypoints'})
     
-    random.seed(20201009)
+    # random.seed(20201009)
     random_seed = random.randint(0, 20201009)
     train_set = HEDataset_Fast(data_dir=datadir,
                                n_classes=exp_dict["n_classes"],
@@ -88,7 +96,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # Model
     # ==================
 
-    torch.manual_seed(20201009)
+    # torch.manual_seed(20201009)
     model = models.get_model(exp_dict['model'], exp_dict=exp_dict, train_set=train_set).cuda()
 
     model_path = os.path.join(savedir, "model.pth")
@@ -158,7 +166,6 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     hu.save_pkl(os.path.join(savedir, 'test_iou.pkl'), test_dict)
     print('Test IoU:{}'.format(test_dict["test_iou"]))
     print('Experiment completed et epoch %d' % e)
-
 
 
 if __name__ == "__main__":
