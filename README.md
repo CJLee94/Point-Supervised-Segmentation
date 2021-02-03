@@ -1,4 +1,4 @@
-# lcfcn-pseudo
+# Point-supervised segmentation of microscopy images and volumes via objectness regularization
 
 ## 1. Introduction
 
