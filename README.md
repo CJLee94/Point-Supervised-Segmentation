@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-This project is a re-implementation of PseudoEdgeNet([paper](https://arxiv.org/pdf/1906.02924)) and LCFCN([paper](https://arxiv.org/abs/1807.09856)|[code](https://github.com/ElementAI/LCFCN.git)). 
+This project contains work of point-supervised segmentation of microscopy images and volumes via objectness regularization and re-implementations of PseudoEdgeNet([paper](https://arxiv.org/pdf/1906.02924)) and LCFCN([paper](https://arxiv.org/abs/1807.09856)|[code](https://github.com/ElementAI/LCFCN.git)). 
 The LCFCN part contains most of the original code while the PseudoEdgeNet was implemented according to the paper as we weren't able to find existing code from the project.
 
 ## 2. Usage
