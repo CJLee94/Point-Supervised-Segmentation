@@ -25,18 +25,19 @@ You can download the `BBBC`, `TNBC` or `MoNuSegTraingData` to the directory. It 
 
 ### 2.3 Train and cross-validation
 #### 2.3.1 Preprocessing
-Before training, an objectness map should be generated first. Make sure the image and the point annotation saved in the path as below:
+Before training, the objectness map for each image should be generated first. Make sure the images ,point annotations and the groundtruth (for validation) saved in the path as below:
 ```
 Dataset
 └── Train
     └── Images
     └── Points
+    └── GroundTruth
 └── Validate
     └── ...
 └── Test
     └── ...
 ```
-
+Then run `generate_obj.py` to generate objectness maps.
 #### 2.3.2 Example
 Train and validate the model with BBBC dataset
 ```
