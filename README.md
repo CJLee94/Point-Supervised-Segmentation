@@ -27,17 +27,14 @@ You can download the `BBBC`, `TNBC` or `MoNuSegTraingData` to the directory. It 
 #### 2.3.1 Preprocessing
 Before training, an objectness map should be generated first. Make sure the image and the point annotation saved in the path as below:
 ```
-app
-└── screens
-    └── App
-        └── screens
-            ├── Admin
-            │   └── screens
-            │       ├── Reports
-            │       └── Users
-            └── Course
-                └── screens
-                    └── Assignments
+Dataset
+└── Train
+    └── Images
+    └── Points
+└── Validate
+    └── ...
+└── Test
+    └── ...
 ```
 
 #### 2.3.2 Example
