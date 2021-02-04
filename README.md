@@ -21,7 +21,7 @@ This command installs pydicom and the [Haven library](https://github.com/Element
 ### 2.2 Download Dataset
 You can download the `BBBC`, `TNBC` or `MoNuSegTraingData` to the directory. It contains the splitted index for each validation fold and the dataset. 
 
-%https://drive.google.com/drive/folders/1uX6yBVGwO8sft5D0M0yS_ISfnwALyyzj?usp=sharing
+<!--https://drive.google.com/drive/folders/1uX6yBVGwO8sft5D0M0yS_ISfnwALyyzj?usp=sharing-->
 
 ### 2.3 Train and cross-validation
 #### 2.3.1 Preprocessing
