@@ -24,20 +24,28 @@ You can download the `MoNuSegTraingData` and `TNBC` to the directory. It contain
 https://drive.google.com/drive/folders/1uX6yBVGwO8sft5D0M0yS_ISfnwALyyzj?usp=sharing
 
 ### 2.3 Train and cross-validation
-#### 2.3.1 Example
+#### 2.3.1 Preprocessing
+Before training, an objectness map should be generated first. Make sure the image and the point annotation saved in the path as below:
 
-Train and validate the lcfcn model with TNBC dataset
+
+#### 2.3.2 Example
+Train and validate the model with BBBC dataset
 ```
-python trainval.py -d TNBC -e exp_config_lcfcn.json -r 1
+python trainval.py -d BBBC -e exp_config_ponet.json -r 1
+```
+
+Train and validate the model with TNBC dataset
+```
+python trainval.py -d TNBC -e exp_config_ponet.json -r 1
 ```
 
 Train and validate the pseudoedgenet model with MoNuSeg dataset
 ```
-python trainval.py -d MoNuSegTrainingData -e exp_config_penet.json -r 1
+python trainval.py -d MoNuSegTrainingData -e exp_config_ponet.json -r 1
 ```
 
 Both [`trainval.py`](trainval.py) and [`trainval.ipynb`](trainval.ipynb) can be used to train and validate the model. In [`trainval.ipynb`](trainval.ipynb), you can get a brief introduction of the setup of the dataset.
 
-#### 2.3.2 Module location
+#### 2.3.3 Module location
 
 The models are defined in [`src/models`](src/models). The dataset is defined in [`src/datasets/__init__.py`](src/datasets/__init__.py). The loss function is defined in [`lcfcn/lcfcn_loss.py`](lcfcn/lcfcn_loss.py). The function `compute_weighted_crossentropy` is used in the PseudoEdgeNet model. The `compute_lcfcn_loss` is used in LCFCN model.
