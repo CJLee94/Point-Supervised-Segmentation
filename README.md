@@ -26,17 +26,19 @@ You can download the `BBBC`, `TNBC` or `MoNuSegTraingData` to the directory. It 
 ### 2.3 Train and cross-validation
 #### 2.3.1 Preprocessing
 Before training, an objectness map should be generated first. Make sure the image and the point annotation saved in the path as below:
-var routes = (
-  <Route name="App">
-    <Route name="Admin">
-      <Route name="Users"/>
-      <Route name="Reports"/>
-    </Route>
-    <Route name="Course">
-      <Route name="Assignments"/>
-    </Route>
-  </Route>
-);
+```
+app
+└── screens
+    └── App
+        └── screens
+            ├── Admin
+            │   └── screens
+            │       ├── Reports
+            │       └── Users
+            └── Course
+                └── screens
+                    └── Assignments
+```
 
 #### 2.3.2 Example
 Train and validate the model with BBBC dataset
