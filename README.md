@@ -22,7 +22,7 @@ This command installs pydicom and the [Haven library](https://github.com/Element
 ### 2.2 Prerequest
 
 A stain norm process need to be done in the preprocessing step before generating objectness map.
-`git clone https://github.com/Peter554/StainTools.git`
+`git clone https://github.com/wanghao14/Stain_Normalization.git`
 
 ### 2.3 Download Dataset
 You can download the `BBBC`, `TNBC` or `MoNuSegTraingData` to the directory. It contains the splitted index for each validation fold and the dataset. 
